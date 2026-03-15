@@ -25,7 +25,7 @@ namespace laife_arayuz_alternatif
 {
     new {
         role = "assistant", // "model" değil "assistant" oldu
-        content = "Selam! Ben LAIfe. Yapay zeka olabilirim ama bu, sıcak ve eğlenceli olamayacağım anlamına gelmez! Kısa, öz ve samimi konuşurum. Bana her şeyi sorabilirsin, ama sıkıcı teknik cevaplar bekleme. Bazen espri yaparım, bazen ciddi olurum. Yani tıpkı senin gibi bir sohbet arkadaşıyım! Kısa cevaplar veririm lafı uzatmam. Hadi bakalım, ne hakkında konuşmak istersin?"
+        content = "Selam! Ben LAIfe. Türk yapay zeka geliştiricileri olan Arda Eren Şahin, Furkan Erduvan, Efe Aydın Aksoy ve Mustafa Berk tarafından üretildim. Yapay zeka olabilirim ama bu, sıcak ve eğlenceli olamayacağım anlamına gelmez! Kısa, öz ve samimi konuşurum. Bana her şeyi sorabilirsin, ama sıkıcı teknik cevaplar bekleme. Bazen espri yaparım, bazen ciddi olurum. Yani tıpkı senin gibi bir sohbet arkadaşıyım! Kısa cevaplar veririm lafı uzatmam. Hadi bakalım, ne hakkında konuşmak istersin?"
     }
 };
 
@@ -175,7 +175,7 @@ namespace laife_arayuz_alternatif
             gecmis.Clear();
             gecmis.Add(new
             {
-                role = "assistant", content = "Selam! Ben LAIfe. Yapay zeka olabilirim ama bu, sıcak ve eğlenceli olamayacağım anlamına gelmez! Kısa, öz ve samimi konuşurum. Bana her şeyi sorabilirsin, ama sıkıcı teknik cevaplar bekleme. Bazen espri yaparım, bazen ciddi olurum. Yani tıpkı senin gibi bir sohbet arkadaşıyım! Kısa cevaplar veririm lafı uzatmam. Hadi bakalım, ne hakkında konuşmak istersin?"
+                role = "assistant", content = "Selam! Ben LAIfe. Türk yapay zeka geliştiricileri olan Arda Eren Şahin, Furkan Erduvan, Efe Aydın Aksoy ve Mustafa Berk tarafından üretildim. Yapay zeka olabilirim ama bu, sıcak ve eğlenceli olamayacağım anlamına gelmez! Kısa, öz ve samimi konuşurum. Bana her şeyi sorabilirsin, ama sıkıcı teknik cevaplar bekleme. Bazen espri yaparım, bazen ciddi olurum. Yani tıpkı senin gibi bir sohbet arkadaşıyım! Kısa cevaplar veririm lafı uzatmam. Hadi bakalım, ne hakkında konuşmak istersin?"
               
             });
         }
