@@ -1,111 +1,185 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Runtime.InteropServices; //api icin gerekli library
-using System.Windows.Controls;
+using System.Runtime.InteropServices;
 using System.Drawing;
-
 
 namespace laife_arayuz_alternatif
 {
     public partial class mainwindow : Form
     {
+        [DllImport("user32.dll")]
+        static extern bool HideCaret(IntPtr hWnd);
 
-        [DllImport("user32.dll")] // windows ui fonksiyonlarina erismek icin dllimport ile user32.dll cagiriyoruz (imlecin yanip sonmesini engellemek icin)
-        static extern bool HideCaret(IntPtr hWnd); // belirli penceredeki imleci gizleyecek method
+        private string apiKey => Properties.Settings.Default.GroqApiKey;
+        private static readonly string apiUrl = "https://api.groq.com/openai/v1/chat/completions";
 
-        private static readonly string apiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY"); //groq apı ile değiştirdim
-        private static readonly string apiUrl = "https://api.groq.com/openai/v1/chat/completions"; //groq ile değiştirildi için groq linki
+        // API key giriş ekranı için panel
+        private Panel pnl_keyGiris;
 
         private List<object> gecmis = new List<object>
-{
-    new {
-        role = "assistant", // "model" değil "assistant" oldu
-        content = "Selam! Ben LAIfe. Türk yapay zeka geliştiricileri olan Arda Eren Şahin, Furkan Erduvan, Efe Aydın Aksoy ve Mustafa Berk tarafından üretildim. Yapay zeka olabilirim ama bu, sıcak ve eğlenceli olamayacağım anlamına gelmez! Kısa, öz ve samimi konuşurum. Bana her şeyi sorabilirsin, ama sıkıcı teknik cevaplar bekleme. Bazen espri yaparım, bazen ciddi olurum. Yani tıpkı senin gibi bir sohbet arkadaşıyım! Kısa cevaplar veririm lafı uzatmam. Hadi bakalım, ne hakkında konuşmak istersin?"
-    }
-};
+        {
+            new {
+                role = "assistant",
+                content = "Selam! Ben LAIfe. Türk yapay zeka geliştiricileri olan Arda Eren Şahin, Furkan Erduvan, Efe Aydın Aksoy ve Mustafa Berk tarafından üretildim. Yapay zeka olabilirim ama bu, sıcak ve eğlenceli olamayacağım anlamına gelmez! Kısa, öz ve samimi konuşurum. Bana her şeyi sorabilirsin, ama sıkıcı teknik cevaplar bekleme. Bazen espri yaparım, bazen ciddi olurum. Yani tıpkı senin gibi bir sohbet arkadaşıyım! Kısa cevaplar veririm lafı uzatmam. Hadi bakalım, ne hakkında konuşmak istersin?"
+            }
+        };
 
         public mainwindow()
         {
             InitializeComponent();
-            SetupChatScreen(); // chat ekrani ayarlamalarini formun baslangicinda yapmasini sagliyoruz
+            SetupChatScreen();
         }
-
-
 
         private void SetupChatScreen()
         {
-            HideCaret(chat_ekran.Handle); // hangi ekranin imlecinin gizlenecegi belirlenir
-            this.Load += (s, e) => HideCaret(chat_ekran.Handle); // 
-
-            // += ile eventlere fonksiyon eklenir s = sender = durum, e = event = olay, durumun gerceklesmesi
-            chat_ekran.Click += (s, e) => HideCaret(chat_ekran.Handle); // click durumunda 
-            chat_ekran.MouseDown += (s, e) => HideCaret(chat_ekran.Handle); // mousedown durumunda
-            chat_ekran.GotFocus += (s, e) => HideCaret(chat_ekran.Handle); // focus durumunda 
-            chat_ekran.TextChanged += (s, e) => HideCaret(chat_ekran.Handle); // text degisme durumunda da imleci gizliyor
-
-
+            HideCaret(chat_ekran.Handle);
+            this.Load += (s, e) => HideCaret(chat_ekran.Handle);
+            chat_ekran.Click += (s, e) => HideCaret(chat_ekran.Handle);
+            chat_ekran.MouseDown += (s, e) => HideCaret(chat_ekran.Handle);
+            chat_ekran.GotFocus += (s, e) => HideCaret(chat_ekran.Handle);
+            chat_ekran.TextChanged += (s, e) => HideCaret(chat_ekran.Handle);
         }
 
         private void mainwindow_Load(object sender, EventArgs e)
         {
+            if (string.IsNullOrEmpty(Properties.Settings.Default.GroqApiKey))
+            {
+                // Her şeyi gizle
+                sidebar.Visible = false;
+                chat_panel.Visible = false;
+                panel_settings.Visible = false;
+                panel_credits.Visible = false;
+                text_mesaj.Visible = false;
+                btn_gonder.Visible = false;
+                chat_ekran.Visible = false;
 
+                // Formun üzerine yeni bir panel oluştur
+                AnaEkranaKeyPaneliEkle();
+            }
+            else
+            {
+                // Key kayıtlı — giriş kontrollerini gizle kral ;)
+            }
+        }
 
+        private void AnaEkranaKeyPaneliEkle()
+        {
+            int ortaX = this.ClientSize.Width / 2;
+            int ortaY = this.ClientSize.Height / 2;
 
+            // Ana panel
+            pnl_keyGiris = new Panel();
+            pnl_keyGiris.Size = new Size(360, 160);
+            pnl_keyGiris.Location = new Point(ortaX - 180, ortaY - 80);
+            pnl_keyGiris.BackColor = Color.FromArgb(20, 20, 60);
+            this.Controls.Add(pnl_keyGiris);
+            pnl_keyGiris.BringToFront();
+
+            // Başlık
+            Label lbl_baslik = new Label();
+            lbl_baslik.Text = "Groq API Key'inizi Girin";
+            lbl_baslik.ForeColor = Color.White;
+            lbl_baslik.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+            lbl_baslik.AutoSize = true;
+            lbl_baslik.Location = new Point(20, 15);
+            pnl_keyGiris.Controls.Add(lbl_baslik);
+
+            // TextBox
+            TextBox txt_key = new TextBox();
+            txt_key.Width = 320;
+            txt_key.Height = 30;
+            txt_key.Location = new Point(20, 50);
+            txt_key.BackColor = Color.FromArgb(42, 42, 115);
+            txt_key.ForeColor = Color.White;
+            txt_key.Font = new Font("Segoe UI", 10);
+            txt_key.BorderStyle = BorderStyle.FixedSingle;
+            txt_key.PasswordChar = '*';
+            pnl_keyGiris.Controls.Add(txt_key);
+
+            // Kaydet butonu
+            Button btn_key_kaydet = new Button();
+            btn_key_kaydet.Text = "Kaydet ve Başla";
+            btn_key_kaydet.Size = new Size(130, 32);
+            btn_key_kaydet.Location = new Point(20, 90);
+            btn_key_kaydet.BackColor = Color.FromArgb(80, 120, 180);
+            btn_key_kaydet.ForeColor = Color.White;
+            btn_key_kaydet.FlatStyle = FlatStyle.Flat;
+            btn_key_kaydet.Font = new Font("Segoe UI", 9, FontStyle.Bold);
+            btn_key_kaydet.Cursor = Cursors.Hand;
+            pnl_keyGiris.Controls.Add(btn_key_kaydet);
+
+            // Bilgi notu
+            Label lbl_not = new Label();
+            lbl_not.Text = "console.groq.com adresinden ücretsiz alabilirsiniz.";
+            lbl_not.ForeColor = Color.Gray;
+            lbl_not.AutoSize = true;
+            lbl_not.Location = new Point(20, 132);
+            lbl_not.Font = new Font("Segoe UI", 8);
+            pnl_keyGiris.Controls.Add(lbl_not);
+
+            // Enter ile de kaydet
+            txt_key.KeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.Enter)
+                {
+                    e.SuppressKeyPress = true;
+                    btn_key_kaydet.PerformClick();
+                }
+            };
+
+            // Kaydet butonuna tıklanınca
+            btn_key_kaydet.Click += (s, e) =>
+            {
+                string key = txt_key.Text.Trim();
+                if (string.IsNullOrEmpty(key))
+                {
+                    MessageBox.Show("Lütfen bir API key girin.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                Properties.Settings.Default.GroqApiKey = key;
+                Properties.Settings.Default.Save();
+
+                // Giriş panelini kaldır, chat'i aç
+                pnl_keyGiris.Visible = false;
+                this.Controls.Remove(pnl_keyGiris);
+
+                sidebar.Visible = true;
+                chat_panel.Visible = true;
+                text_mesaj.Visible = true;
+                btn_gonder.Visible = true;
+            };
         }
 
         string mesaj;
         private async void btn_gonder_Click(object sender, EventArgs e)
         {
-
-            mesaj = text_mesaj.Text.Trim(); //trim gereksiz bosluklari siliyor
-            if (string.IsNullOrWhiteSpace(mesaj)) return; //mesaj bossa fonksiyon sonlaniyor
+            mesaj = text_mesaj.Text.Trim();
+            if (string.IsNullOrWhiteSpace(mesaj)) return;
 
             text_mesaj.Clear();
+            chat_ekran.Visible = true;
 
-            // chat ekrani gorunurluk ayarlari
-            if (chat_ekran == null)
-            {
-                if (string.IsNullOrEmpty(mesaj) || text_mesaj.Text == " " || text_mesaj.Text == "\n")
-                {
-                    chat_ekran.Visible = false;
-                }
-                else
-                {
-                    chat_ekran.Visible = true;
-                }
-            }
-            else
-            {
-                chat_ekran.Visible = true;
-            }
-
-
-            //kullanicinin mesajini listeye ekliyor ve ai in yanit vermesini sagliyor
             chat_ekran.Text = chat_ekran.Text + "Sen: " + mesaj + "\n";
-            gecmis.Add(new { role = "user", content = mesaj }); // gecmise kullanicidan gelen mesaj ekleniyor
+            gecmis.Add(new { role = "user", content = mesaj });
 
-            //oto scroll down
             chat_ekran.SelectionStart = chat_ekran.Text.Length;
             chat_ekran.ScrollToCaret();
 
-            //yanıtı alıp listeye ekliyor
             string yanit = await AIYanit(mesaj);
             chat_ekran.Text = chat_ekran.Text + "LAIfe: " + yanit + "\n";
 
-            gecmis.Add(new { role = "assistant", content = yanit }); // ai dan gelen mesaj gecmise ekleniyor
+            gecmis.Add(new { role = "assistant", content = yanit });
 
-            //oto scroll down
             chat_ekran.SelectionStart = chat_ekran.Text.Length;
             chat_ekran.ScrollToCaret();
-
-
-
         }
+
         private async Task<string> AIYanit(string prompt)
         {
             using (HttpClient client = new HttpClient())
@@ -114,9 +188,9 @@ namespace laife_arayuz_alternatif
 
                 var requestBody = new
                 {
-                    model = "llama-3.3-70b-versatile", // ücretsiz ve güçlü model
+                    model = "llama-3.3-70b-versatile",
                     messages = gecmis,
-                    temperature = 0.6,
+                    temperature = 0.5,
                     max_tokens = 999
                 };
 
@@ -127,7 +201,11 @@ namespace laife_arayuz_alternatif
                 string jsonResponse = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
+                {
+                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                        return "❌ API key geçersiz! Lütfen programı yeniden başlatıp doğru key'i girin.";
                     return $"Hata: {response.StatusCode}";
+                }
 
                 var jsonDoc = JsonDocument.Parse(jsonResponse);
                 return jsonDoc.RootElement
@@ -140,30 +218,17 @@ namespace laife_arayuz_alternatif
 
         private void text_mesaj_KeyDown(object sender, KeyEventArgs e)
         {
-            //global mesaj degiskenine text_mesaj daki degeri yazdirip trim ile gereksiz bosluklari aliyoruz
             mesaj = text_mesaj.Text.Trim();
 
-            //chat ekraninda ve mesaj textbox da icerik yoksa chat ekrani gorunmuyor
             if (chat_ekran.Text == "" && text_mesaj.Text == "")
-            {
                 chat_ekran.Visible = false;
-            }
             else
             {
                 chat_ekran.Visible = true;
-                if (string.IsNullOrEmpty(mesaj) || mesaj == " " || mesaj == "\n")
+                if (!string.IsNullOrEmpty(mesaj) && e.KeyCode == Keys.Enter)
                 {
-
-                }
-                else
-                {
-                    chat_ekran.Visible = true;
-                    //keydown dan e ile gelen deger enter ise btn_gonder calisiyor
-                    if (e.KeyCode == Keys.Enter)
-                    {
-                        btn_gonder.PerformClick();
-                        e.SuppressKeyPress = true;
-                    }
+                    btn_gonder.PerformClick();
+                    e.SuppressKeyPress = true;
                 }
             }
         }
@@ -175,124 +240,89 @@ namespace laife_arayuz_alternatif
             gecmis.Clear();
             gecmis.Add(new
             {
-                role = "assistant", content = "Selam! Ben LAIfe. Türk yapay zeka geliştiricileri olan Arda Eren Şahin, Furkan Erduvan, Efe Aydın Aksoy ve Mustafa Berk tarafından üretildim. Yapay zeka olabilirim ama bu, sıcak ve eğlenceli olamayacağım anlamına gelmez! Kısa, öz ve samimi konuşurum. Bana her şeyi sorabilirsin, ama sıkıcı teknik cevaplar bekleme. Bazen espri yaparım, bazen ciddi olurum. Yani tıpkı senin gibi bir sohbet arkadaşıyım! Kısa cevaplar veririm lafı uzatmam. Hadi bakalım, ne hakkında konuşmak istersin?"
-              
+                role = "assistant",
+                content = "Selam! Ben LAIfe. Türk yapay zeka geliştiricileri olan Arda Eren Şahin, Furkan Erduvan, Efe Aydın Aksoy ve Mustafa Berk tarafından üretildim. Yapay zeka olabilirim ama bu, sıcak ve eğlenceli olamayacağım anlamına gelmez! Kısa, öz ve samimi konuşurum. Bana her şeyi sorabilirsin, ama sıkıcı teknik cevaplar bekleme. Bazen espri yaparım, bazen ciddi olurum. Yani tıpkı senin gibi bir sohbet arkadaşıyım! Kısa cevaplar veririm lafı uzatmam. Hadi bakalım, ne hakkında konuşmak istersin?"
             });
         }
 
+        // ===================== AYARLAR PANELİ =====================
+
+        private void btn_ayarlar_Click(object sender, EventArgs e)
+        {
+            if (panel_credits.Visible == true)
+                panel_credits.Visible = false;
+
+            panel_settings.Visible = !panel_settings.Visible;
+        }
+
+        private void btn_kaydet_Click(object sender, EventArgs e)
+        {
+            // Bu buton artık sidebar'daki eski buton — kullanılmıyor
+        }
+
+        private void btn_keySil_Click(object sender, EventArgs e)
+        {
+            var sonuc = MessageBox.Show("API key'i silmek istediğinize emin misiniz?", "Emin misiniz?", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (sonuc == DialogResult.Yes)
+            {
+                Properties.Settings.Default.GroqApiKey = "";
+                Properties.Settings.Default.Save();
+                MessageBox.Show("Key silindi. Programı yeniden başlatın.");
+            }
+        }
+
+        // ===================== HOVER EFEKTLERİ =====================
+
         private void btn_newChat_MouseMove(object sender, MouseEventArgs e)
         {
-            //koyu tema acikken hover efekti
-            if (cb_tema.Checked)
-            {
-                btn_newChat.BackColor = System.Drawing.Color.DarkSlateBlue;
-            }
-            //acik tema acikken hover efekti
-            else
-            {
-                btn_newChat.BackColor = Color.FromArgb(80, 120, 180);
-            }
+            btn_newChat.BackColor = cb_tema.Checked ? Color.DarkSlateBlue : Color.FromArgb(80, 120, 180);
         }
         private void btn_newChat_MouseLeave(object sender, EventArgs e)
         {
-            btn_newChat.BackColor = System.Drawing.Color.Transparent;
+            btn_newChat.BackColor = Color.Transparent;
         }
 
         private void btn_ayarlar_MouseMove(object sender, MouseEventArgs e)
         {
-            //koyu tema acikken hover efekti
-            if (cb_tema.Checked)
-            {
-                btn_ayarlar.BackColor = System.Drawing.Color.DarkSlateBlue;
-            }
-            //acik tema acikken hover efekti
-            else
-            {
-                btn_ayarlar.BackColor = Color.FromArgb(80, 120, 180);
-            }
+            btn_ayarlar.BackColor = cb_tema.Checked ? Color.DarkSlateBlue : Color.FromArgb(80, 120, 180);
         }
-
         private void btn_ayarlar_MouseLeave(object sender, EventArgs e)
         {
-            btn_ayarlar.BackColor = System.Drawing.Color.Transparent;
+            btn_ayarlar.BackColor = Color.Transparent;
         }
 
         private void btn_credits_MouseMove(object sender, MouseEventArgs e)
         {
-            //koyu tema acikken hover efekti 
-            if (cb_tema.Checked)
-            {
-                btn_credits.BackColor = System.Drawing.Color.DarkSlateBlue;
-            }
-            //acik tema acikken hover efekti 
-            else
-            {
-                btn_credits.BackColor = Color.FromArgb(80, 120, 180);
-            }
+            btn_credits.BackColor = cb_tema.Checked ? Color.DarkSlateBlue : Color.FromArgb(80, 120, 180);
         }
-
         private void btn_credits_MouseLeave(object sender, EventArgs e)
         {
-            btn_credits.BackColor = System.Drawing.Color.Transparent;
+            btn_credits.BackColor = Color.Transparent;
         }
 
         private void btn_credits_Click(object sender, EventArgs e)
         {
-            // ayarlar penceresi aciksa kapanmasi icin
             if (panel_settings.Visible == true)
-            {
                 panel_settings.Visible = false;
-            }
 
-            // butona tiklandiginda hakkinda penceresinin acilip kapanmasi icin
-            if (panel_credits.Visible == false)
-            {
-                panel_credits.Visible = true;
-            }
-            else
-            {
-                panel_credits.Visible = false;
-            }
+            panel_credits.Visible = !panel_credits.Visible;
         }
 
-        private void btn_ayarlar_Click(object sender, EventArgs e)
-        {
-            // hakkinda penceresi aciksa kapanmasi icin
-            if (panel_credits.Visible == true)
-            {
-                panel_credits.Visible = false;
-            }
-
-            // butona tiklandiginda ayarlar penceresinin acilip kapanmasi icin
-            if (panel_settings.Visible == false)
-            {
-                panel_settings.Visible = true;
-            }
-            else
-            {
-                panel_settings.Visible = false;
-            }
-        }
+        // ===================== TEMA =====================
 
         private void cb_tema_CheckedChanged(object sender, EventArgs e)
         {
             if (!cb_tema.Checked)
             {
-                //acik tema yazi renkleri
-                btn_ayarlar.ForeColor = Color.FromArgb(0, 0, 64);
-                btn_credits.ForeColor = Color.FromArgb(0, 0, 64);
-                btn_newChat.ForeColor = Color.FromArgb(0, 0, 64);
-                btn_gonder.ForeColor = Color.FromArgb(0, 0, 64);
-                chat_ekran.ForeColor = Color.FromArgb(0, 0, 64);
-                chat_panel.ForeColor = Color.FromArgb(0, 0, 64);
-                gb_gorunum.ForeColor = Color.FromArgb(0, 0, 64);
-                panel_credits.ForeColor = Color.FromArgb(0, 0, 64);
-                panel_settings.ForeColor = Color.FromArgb(0, 0, 64);
-                text_mesaj.ForeColor = Color.FromArgb(0, 0, 64);
-                lbl_desc.ForeColor = Color.FromArgb(0, 0, 64);
+                Color yazi = Color.FromArgb(0, 0, 64);
+                btn_ayarlar.ForeColor = yazi; btn_credits.ForeColor = yazi;
+                btn_newChat.ForeColor = yazi; btn_gonder.ForeColor = yazi;
+                chat_ekran.ForeColor = yazi; chat_panel.ForeColor = yazi;
+                gb_gorunum.ForeColor = yazi; panel_credits.ForeColor = yazi;
+                panel_settings.ForeColor = yazi; text_mesaj.ForeColor = yazi;
+                lbl_desc.ForeColor = yazi;
 
-                // acik tema arkaplan renkleri
-                this.BackColor = System.Drawing.Color.Silver;
+                this.BackColor = Color.Silver;
                 chat_ekran.BackColor = Color.FromArgb(120, 170, 240);
                 chat_panel.BackColor = Color.FromArgb(120, 170, 240);
                 panel_credits.BackColor = Color.FromArgb(100, 140, 200);
@@ -300,25 +330,17 @@ namespace laife_arayuz_alternatif
                 sidebar.BackColor = Color.FromArgb(100, 140, 200);
                 text_mesaj.BackColor = Color.FromArgb(100, 140, 200);
                 btn_gonder.BackColor = Color.FromArgb(100, 140, 200);
-
-
             }
             else
             {
-                // koyu tema yazi renkleri
-                btn_ayarlar.ForeColor = Color.FromArgb(192, 192, 255);
-                btn_credits.ForeColor = Color.FromArgb(192, 192, 255);
-                btn_newChat.ForeColor = Color.FromArgb(192, 192, 255);
-                btn_gonder.ForeColor = Color.FromArgb(192, 192, 255);
-                chat_ekran.ForeColor = Color.FromArgb(192, 192, 255);
-                chat_panel.ForeColor = Color.FromArgb(192, 192, 255);
-                gb_gorunum.ForeColor = Color.FromArgb(192, 192, 255);
-                panel_credits.ForeColor = Color.FromArgb(192, 192, 255);
-                panel_settings.ForeColor = Color.FromArgb(192, 192, 255);
-                text_mesaj.ForeColor = Color.FromArgb(192, 192, 255);
-                lbl_desc.ForeColor = Color.FromArgb(192, 192, 255);
+                Color yazi = Color.FromArgb(192, 192, 255);
+                btn_ayarlar.ForeColor = yazi; btn_credits.ForeColor = yazi;
+                btn_newChat.ForeColor = yazi; btn_gonder.ForeColor = yazi;
+                chat_ekran.ForeColor = yazi; chat_panel.ForeColor = yazi;
+                gb_gorunum.ForeColor = yazi; panel_credits.ForeColor = yazi;
+                panel_settings.ForeColor = yazi; text_mesaj.ForeColor = yazi;
+                lbl_desc.ForeColor = yazi;
 
-                // koyu tema arkaplan renkleri
                 this.BackColor = Color.FromArgb(0, 0, 35);
                 chat_ekran.BackColor = Color.FromArgb(0, 0, 20);
                 chat_panel.BackColor = Color.FromArgb(0, 0, 20);
