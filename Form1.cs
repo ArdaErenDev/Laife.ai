@@ -18,7 +18,7 @@ namespace laife_arayuz_alternatif
         [DllImport("user32.dll")] // windows ui fonksiyonlarina erismek icin dllimport ile user32.dll cagiriyoruz (imlecin yanip sonmesini engellemek icin)
         static extern bool HideCaret(IntPtr hWnd); // belirli penceredeki imleci gizleyecek method
 
-        private static readonly string apiKey = "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"; //groq apı ile değiştirdim
+        private static readonly string apiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY"); //groq apı ile değiştirdim
         private static readonly string apiUrl = "https://api.groq.com/openai/v1/chat/completions"; //groq ile değiştirildi için groq linki
 
         private List<object> gecmis = new List<object>
